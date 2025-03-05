@@ -56,7 +56,7 @@ func (b *BoolDefaulter) HandleField(value string, path string, field reflect.Str
 	case value == "false":
 		valueToSet = false
 	default:
-		return true, false, NewError(b, ErrInvalidDefaultValue, path, field, fmt.Sprintf("invalid boolean value (not 'true' nor 'false')"))
+		return true, false, NewError(b, ErrInvalidDefaultValue, path, field, "invalid boolean value (not 'true' nor 'false')")
 	}
 
 	// Handle pointer cases
@@ -310,11 +310,6 @@ func (d *DurationDefaulter) HandledKinds() []reflect.Kind {
 }
 
 func (d *DurationDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
-	kind := field.Type.Kind()
-	if kind == reflect.Ptr {
-		kind = field.Type.Elem().Kind()
-	}
-
 	duration, err := time.ParseDuration(value)
 	if err != nil {
 		return true, false, NewError(d, ErrInvalidDefaultValue, path, field, fmt.Sprintf("invalid duration value: %v", err))

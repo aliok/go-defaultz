@@ -263,7 +263,11 @@ func (r *defaulterRegistry) DoApplyDefaults(value reflect.Value, path string) er
 				var callNext bool
 				var set bool
 				var err error
+				// TODO: remove nolints after enabling the golden rules
+				//nolint:staticcheck
 				callNext, set, err = defaulter.HandleField(defaultStr, path, field, fieldValue)
+				// err is always nil for the existing defaulters. May not be nil for custom defaulters.
+				//nolint:staticcheck
 				if err != nil {
 					result = multierror.Append(result, err)
 					// we continue to the next defaulter
