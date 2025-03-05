@@ -9,7 +9,7 @@ import (
 	"github.com/aliok/go-defaultz"
 )
 
-// Test struct with various tag formats
+// Test struct with various tag formats.
 type testStruct struct {
 	EmptyTag       string `customTag:""`
 	WhitespaceTag  string `customTag:" "`

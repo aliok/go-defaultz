@@ -25,7 +25,7 @@ func detectPotentialCycles(t reflect.Type, seen map[reflect.Type]bool) bool {
 	seen[t] = true
 
 	// Check each field
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		fieldType := t.Field(i).Type
 		if detectPotentialCycles(fieldType, seen) {
 			return true

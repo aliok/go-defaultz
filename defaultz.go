@@ -72,7 +72,7 @@ type defaulterRegistry struct {
 	ignoreCannotSet bool
 }
 
-// compile-time check for interface implementation
+// compile-time check for interface implementation.
 var _ DefaulterRegistry = &defaulterRegistry{}
 
 // NewDefaulterRegistry creates a new defaulterRegistry with optional configurations.
@@ -116,16 +116,7 @@ func (r *defaulterRegistry) Register(priority int, defaulter Defaulter) Defaulte
 // DefaulterRegistryOption represents functional options for configuring defaulterRegistry.
 type DefaulterRegistryOption func(r *defaulterRegistry)
 
-// WithBasicDefaulters registers basic defaulters in the registry.
-// The basic defaulters are:
-// - [BoolDefaulter] - priority 1000
-// - [IntDefaulter] - priority 1000
-// - [UintDefaulter] - priority 1000
-// - [FloatDefaulter] - priority 1000
-// - [SliceDefaulter] - priority 1000
-// - [MapDefaulter] - priority 1000
-// - [StringDefaulter] - priority 1000
-// - [DurationDefaulter] - priority 2000
+// - [DurationDefaulter] - priority 2000.
 func WithBasicDefaulters() DefaulterRegistryOption {
 	return func(r *defaulterRegistry) {
 		r.Register(1000, &BoolDefaulter{})
@@ -204,7 +195,7 @@ func (r *defaulterRegistry) DoApplyDefaults(value reflect.Value, path string) er
 	}
 
 	fieldType := value.Type()
-	for i := 0; i < value.NumField(); i++ {
+	for i := range value.NumField() {
 		field := fieldType.Field(i)
 		fieldValue := value.Field(i)
 

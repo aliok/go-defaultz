@@ -763,11 +763,11 @@ func TestApplyDefaultsWithNamedStructs(t *testing.T) {
 	}
 	assert.NoError(t, derr)
 
-	assert.Equal(t, obj.Field1, true)
-	assert.Equal(t, obj.Child.Field2, 123)
-	assert.Equal(t, obj.Child.GrandChild.Field3, "abc")
-	assert.Equal(t, obj.Child.GrandChild.Field4, map[string]float32{"a": 3.2, "b": -214.11})
-	assert.Equal(t, obj.Child.GrandChild.Field5, []int{1, 2, 3})
+	assert.True(t, obj.Field1)
+	assert.Equal(t, 123, obj.Child.Field2)
+	assert.Equal(t, "abc", obj.Child.GrandChild.Field3)
+	assert.Equal(t, map[string]float32{"a": 3.2, "b": -214.11}, obj.Child.GrandChild.Field4)
+	assert.Equal(t, []int{1, 2, 3}, obj.Child.GrandChild.Field5)
 }
 
 type cyclicParent1 struct {
@@ -847,5 +847,5 @@ func TestApplyDefaultsCustomDefaulter(t *testing.T) {
 
 	err := d.ApplyDefaults(obj)
 	assert.NoError(t, err)
-	assert.Equal(t, true, obj.Field)
+	assert.True(t, obj.Field)
 }

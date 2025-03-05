@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// ✅ Non-Cyclic Structs
+// ✅ Non-Cyclic Structs.
 type nonCyclic struct {
 	Field1 int
 	Field2 string
@@ -24,7 +24,7 @@ type nonCyclicNested struct {
 	}
 }
 
-// 🔄 Direct Cycles
+// 🔄 Direct Cycles.
 type directSelfCycle struct {
 	Self *directSelfCycle
 }
@@ -37,7 +37,7 @@ type cyclicChild struct {
 	Parent *cyclicParent
 }
 
-// 🔁 Deep Cycles
+// 🔁 Deep Cycles.
 type deepCyclic1 struct {
 	Next *deepCyclic2
 }
@@ -58,14 +58,14 @@ type deepMultiCyclic3 struct {
 	Ref *deepMultiCyclic1
 }
 
-// 🏗️ Embedded Structs
+// 🏗️ Embedded Structs.
 type embeddedCyclic struct {
 	Inner struct {
 		Parent *embeddedCyclic
 	}
 }
 
-// 📦 Collection Types (Not Cyclic Themselves)
+// 📦 Collection Types (Not Cyclic Themselves).
 type structWithSlice struct {
 	List []string
 }
@@ -78,12 +78,12 @@ type structWithInterface struct {
 	Any interface{}
 }
 
-// 🧩 Complex Edge Cases
+// 🧩 Complex Edge Cases.
 type nestedPointerCycle struct {
 	Ref **nestedPointerCycle
 }
 
-// TestDetectPotentialCycles tests cycle detection in type definitions
+// TestDetectPotentialCycles tests cycle detection in type definitions.
 func TestDetectPotentialCycles(t *testing.T) {
 	tests := []struct {
 		name     string

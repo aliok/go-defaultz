@@ -328,7 +328,7 @@ func (d *DurationDefaulter) HandleField(value string, path string, field reflect
 	return true, true, nil
 }
 
-// Converts string values to correct type
+// Converts string values to correct type.
 func convertValue(value string, fieldType reflect.Type) (reflect.Value, error) {
 	switch fieldType.Kind() {
 	case reflect.Bool:
