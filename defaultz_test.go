@@ -2,6 +2,7 @@ package defaultz_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -599,12 +600,157 @@ func TestApplyDefaultsWithBasicDefaulters(t *testing.T) {
 	}
 }
 
+func TestApplyDefaultsWithBasicDefaulters_BadDefaultValues(t *testing.T) {
+	objects := []any{
+		// bool -----------
+		&struct {
+			F bool `default:"x"`
+		}{},
+		&struct {
+			F bool `default:"1"`
+		}{},
+		&struct {
+			F bool `default:"TRUE"`
+		}{},
+		&struct {
+			F bool `default:"nil"`
+		}{},
+
+		// int -----------
+		&struct {
+			F int `default:"x"`
+		}{},
+		&struct {
+			F int `default:"3.5"`
+		}{},
+		&struct {
+			F int `default:"1e"`
+		}{},
+		&struct {
+			F int `default:"0x2A"`
+		}{},
+		&struct {
+			F int64 `default:"18446744073709551617"`
+		}{},
+		&struct {
+			F int8 `default:"128"`
+		}{},
+
+		// uint -----------
+		&struct {
+			F uint `default:"x"`
+		}{},
+		&struct {
+			F uint `default:"3.5"`
+		}{},
+		&struct {
+			F uint `default:"1e"`
+		}{},
+		&struct {
+			F uint `default:"0x2A"`
+		}{},
+		&struct {
+			F uint `default:"11111111111111111111111111111"`
+		}{},
+		&struct {
+			F uint8 `default:"257"`
+		}{},
+		&struct {
+			F uint `default:"-1"`
+		}{},
+		&struct {
+			F uint `default:"-0"`
+		}{},
+
+		// float -----------
+		&struct {
+			F float64 `default:"x"`
+		}{},
+		&struct {
+			F float64 `default:"3.5.1"`
+		}{},
+		&struct {
+			F float64 `default:"1e"`
+		}{},
+		&struct {
+			F float64 `default:"0x2A"`
+		}{},
+
+		// slice -----------
+		&struct {
+			F []bool `default:"true false x"`
+		}{},
+		&struct {
+			F []int `default:"1 2 x"`
+		}{},
+		&struct {
+			F []uint `default:"1 2 -1"`
+		}{},
+		&struct {
+			F []float64 `default:"1 2 x"`
+		}{},
+
+		// map -----------
+		&struct {
+			F map[string]bool `default:"a:true b:false c:x"`
+		}{},
+		&struct {
+			F map[string]int `default:"a:1 b:2 c:x"`
+		}{},
+		&struct {
+			F map[int]bool `default:"1:true 2:false x:true"`
+		}{},
+		&struct {
+			F map[int]int `default:"1:1 2:2 x:3"`
+		}{},
+
+		// map ----------- pair issues
+		&struct {
+			F map[string]bool `default:"a:"`
+		}{},
+		// &struct {
+		// 	F map[string]bool `default:"a:true b"` // TODO: should fail
+		// }{},
+		// &struct {
+		// 	F map[string]bool `default:"a:true b:false :true"` // TODO: should fail
+		// }{},
+	}
+
+	for i, obj := range objects {
+		t.Run(fmt.Sprintf("case-%d", i), func(t *testing.T) {
+			var err error
+
+			if err = defaultz.ApplyDefaults(obj); err == nil {
+				t.Logf("expected error, got nil")
+				var jsonBytes []byte
+				if jsonBytes, err = json.Marshal(obj); err != nil {
+					t.Fatalf("failed to marshal object to json: %v", err)
+				}
+				t.Logf("got: %s", string(jsonBytes))
+				t.Logf("type: %s", reflect.TypeOf(obj).String())
+				t.Fail()
+			}
+		})
+	}
+}
+
 func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 	tests := []struct {
 		name      string
+		options   []defaultz.DefaulterRegistryOption
 		obj       interface{}
 		expectErr string
 	}{
+		{
+			name: "not parseable bool",
+			obj: &struct {
+				BoolField1 bool `default:"x"`
+			}{},
+			expectErr: "failed to apply default value : (defaultz.BoolDefaulter): invalid default value - " +
+				"invalid boolean value (not 'true' nor 'false'), " +
+				"path:'<root>.BoolField1`, " +
+				"field:'BoolField1 bool `default:\"x\"`'",
+		},
 		{
 			name:      "No struct",
 			obj:       "foo",
@@ -750,14 +896,65 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 				"path:'<root>.Field.Field1`, " +
 				"field:'Field1 **int `default:\"123\"`'",
 		},
+		{
+			name: "Not a struct pointer - struct instance",
+			obj: struct {
+				Field struct {
+					Field1 int `default:"123"`
+				}
+			}{},
+			expectErr: "object must be a pointer to a struct",
+		},
+		{
+			name:      "Not a struct pointer - int",
+			obj:       5,
+			expectErr: "object must be a pointer to a struct",
+		},
+		{
+			name:      "Not a struct pointer - slice",
+			obj:       []int{1},
+			expectErr: "object must be a pointer to a struct",
+		},
+		{
+			name:      "Not a struct pointer - map",
+			obj:       map[string]int{"a": 1},
+			expectErr: "object must be a pointer to a struct",
+		},
+		{
+			name:      "Not a struct pointer - nil",
+			obj:       nil,
+			expectErr: "object must be a pointer to a struct",
+		},
+		{
+			name: "No extractor",
+			obj: &struct {
+				Field int `default:"123"`
+			}{},
+			options: []defaultz.DefaulterRegistryOption{
+				defaultz.WithBasicDefaulters(),
+				defaultz.WithDefaultExtractor(nil),
+			},
+			expectErr: "default extractor is not set",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var err error
 
+			options := []defaultz.DefaulterRegistryOption{
+				defaultz.WithBasicDefaulters(),
+				defaultz.WithDefaultExtractor(
+					defaultz.NewDefaultzExtractor("default", "", ","),
+				),
+			}
+			if len(tt.options) > 0 {
+				options = append(options, tt.options...)
+			}
+			registry := defaultz.NewDefaulterRegistry(options...)
+
 			assert.NotEmpty(t, tt.expectErr, "Invalid test case: expectErr is empty")
-			if err = defaultz.ApplyDefaults(tt.obj); err != nil {
+			if err = registry.ApplyDefaults(tt.obj); err != nil {
 				assert.EqualError(t, err, tt.expectErr, tt.name)
 			} else {
 				t.Logf("expected error, got nil")
