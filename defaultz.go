@@ -17,6 +17,9 @@ var instance = NewDefaulterRegistry(
 	WithDefaultExtractor(extractorInstance),
 )
 
+const PriorityPrimitiveDefaulter = 1000
+const PriorityOtherDefaulter = 2000
+
 // ApplyDefaults applies default values to the struct using the basic defaulters.
 func ApplyDefaults(obj interface{}) error {
 	return instance.ApplyDefaults(obj)
@@ -45,6 +48,7 @@ type Defaulter interface {
 	//   set (bool): True if a value is set, false otherwise. The defaultz package will return an error
 	//               if no defaulter has set a value and there are errors.
 	//   err (*defaultz.Error): An error if the defaulter fails to set the value.
+	// /nolint:lll
 	HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (callNext bool, set bool, err *Error)
 }
 
@@ -119,19 +123,19 @@ type DefaulterRegistryOption func(r *defaulterRegistry)
 // - [DurationDefaulter] - priority 2000.
 func WithBasicDefaulters() DefaulterRegistryOption {
 	return func(r *defaulterRegistry) {
-		r.Register(1000, &BoolDefaulter{})
-		r.Register(1000, &IntDefaulter{})
-		r.Register(1000, &UintDefaulter{})
-		r.Register(1000, &FloatDefaulter{})
-		r.Register(1000, &SliceDefaulter{})
-		r.Register(1000, &MapDefaulter{})
-		r.Register(1000, &StringDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &BoolDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &IntDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &UintDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &FloatDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &SliceDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &MapDefaulter{})
+		r.Register(PriorityPrimitiveDefaulter, &StringDefaulter{})
 
 		// some additional defaulters for non-primitive types
 
 		// time.Duration is an int64 under the hood, so we need to handle it separately.
 		// should run after IntDefaulter as we want non-durations to be handled by IntDefaulter first
-		r.Register(2000, &DurationDefaulter{})
+		r.Register(PriorityOtherDefaulter, &DurationDefaulter{})
 	}
 }
 
@@ -164,7 +168,7 @@ func (r *defaulterRegistry) ApplyDefaults(obj interface{}) error {
 		return errors.New("type definition must not have cycles")
 	}
 
-	path := ""
+	var path string
 	typeName := val.Elem().Type().Name()
 	if typeName == "" {
 		path = "<root>"
@@ -175,6 +179,9 @@ func (r *defaulterRegistry) ApplyDefaults(obj interface{}) error {
 	return r.DoApplyDefaults(val.Elem(), path)
 }
 
+// TODO: can we extract a function to call in the for loop?
+//
+//nolint:gocognit,funlen 	// we can't extract to a function/method because of the error handling
 func (r *defaulterRegistry) DoApplyDefaults(value reflect.Value, path string) error {
 	if r.extractor == nil {
 		return errors.New("default extractor is not set")
@@ -238,6 +245,7 @@ func (r *defaulterRegistry) DoApplyDefaults(value reflect.Value, path string) er
 		if kind == reflect.Ptr {
 			kind = field.Type.Elem().Kind()
 		}
+		//nolint:nestif // can't extract to a function/method because of the error handling
 		if defaulters, ok := r.defaulters[kind]; ok {
 			if !fieldValue.CanSet() {
 				if r.ignoreCannotSet {
@@ -253,12 +261,8 @@ func (r *defaulterRegistry) DoApplyDefaults(value reflect.Value, path string) er
 
 				var callNext bool
 				var set bool
-				var err error
-				// TODO: remove nolints after enabling the golden rules
-				//nolint:staticcheck
 				callNext, set, err = defaulter.HandleField(defaultStr, path, field, fieldValue)
 				// err is always nil for the existing defaulters. May not be nil for custom defaulters.
-				//nolint:staticcheck
 				if err != nil {
 					result = multierror.Append(result, err)
 					// we continue to the next defaulter

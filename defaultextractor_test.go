@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/aliok/go-defaultz"
 )
@@ -85,7 +86,7 @@ func TestDefaultzExtractor_ExtractDefault(t *testing.T) {
 			field, _ := testType.FieldByName(tt.fieldName) // Get struct field
 
 			result, ok, err := extractor.ExtractDefault(field)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.ok, ok)
 			assert.Equal(t, tt.expected, result)
 		})

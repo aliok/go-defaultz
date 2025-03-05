@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// DefaultExtractor is an interface that defines a method to extract the default value specified in the tag of a struct field.
+// DefaultExtractor is an interface that defines a method to extract the default value specified in the tag of a struct
+// field.
 type DefaultExtractor interface {
 
 	// ExtractDefault extracts the default value as string from the tag of a struct field.
@@ -14,7 +15,9 @@ type DefaultExtractor interface {
 
 var _ DefaultExtractor = &DefaultzExtractor{}
 
-// DefaultzExtractor is a DefaultExtractor implementation that extracts the default value from the tag of a struct field.
+// DefaultzExtractor is a DefaultExtractor implementation that extracts the default value from the tag of a struct
+// field.
+//
 // The tag name, prefix and separator can be configured.
 //
 // For example, if the tag name is "default", the prefix is "value=" and the separator is ",":
@@ -24,9 +27,11 @@ var _ DefaultExtractor = &DefaultzExtractor{}
 // - `default:"name=bar, value=foo, title=baz"` will also yield "bar"
 //
 // This implementation allows using existing struct tags for defaulting purposes.
-// For example, if you are using `jsonschema` tag to generate JSON schema with default values, you can reuse the same tag for defaulting.
+// For example, if you are using `jsonschema` tag to generate JSON schema with default values, you can reuse the same
+// tag for defaulting.
 //
-// `jsonschema:"title=myfield,default=foo"` will yield "foo", if the tag name is "jsonschema", the prefix is "default=" and the separator is ",".
+// `jsonschema:"title=myfield,default=foo"` will yield "foo", if the tag name is "jsonschema", the prefix is "default="
+// and the separator is ",".
 type DefaultzExtractor struct {
 
 	// TagName is the tag name to be used for extracting default values.
@@ -49,7 +54,8 @@ type DefaultzExtractor struct {
 	//
 	// the tagStringPrefix should be set to "default=" to be able to extract the default value "hello".
 	//
-	// The tag will be split by the separator (comma in this case) and the prefix will be used to extract the default value.
+	// The tag will be split by the separator (comma in this case) and the prefix will be used to extract the
+	// default value.
 	//
 	// In the following example, the tagStringPrefix should be set to "":
 	//

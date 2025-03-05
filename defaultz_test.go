@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/aliok/go-defaultz"
 	"github.com/aliok/go-defaultz/testtypes"
@@ -589,10 +590,10 @@ func TestApplyDefaultsWithBasicDefaulters(t *testing.T) {
 			if derr != nil {
 				t.Fatalf("unexpected error: %v", derr)
 			}
-			assert.NoError(t, derr, tt.name)
+			require.NoError(t, derr, tt.name)
 
 			jsonBytes, err := json.Marshal(tt.obj)
-			assert.NoError(t, err, tt.name)
+			require.NoError(t, err, tt.name)
 			assert.JSONEq(t, tt.expectJSON, string(jsonBytes), tt.name)
 		})
 	}
@@ -621,50 +622,73 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 			obj: &struct {
 				Field **int `default:"3"`
 			}{},
-			expectErr: "not supported - pointer to pointer is not allowed, path:'<root>.Field`, field:'Field **int `default:\"3\"`'",
+			expectErr: "not supported - " +
+				"pointer to pointer is not allowed, " +
+				"path:'<root>.Field`, " +
+				"field:'Field **int `default:\"3\"`'",
 		},
 		{
 			name: "Not convertible to the type",
 			obj: &struct {
 				Field int `default:"abc"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.IntDefaulter): invalid default value - strconv.ParseInt: parsing \"abc\": invalid syntax, path:'<root>.Field`, field:'Field int `default:\"abc\"`'",
+			expectErr: "failed to apply default value : (defaultz.IntDefaulter): invalid default value - " +
+				"strconv.ParseInt: parsing \"abc\": invalid syntax, " +
+				"path:'<root>.Field`, " +
+				"field:'Field int `default:\"abc\"`'",
 		},
 		{
 			name: "Overflow",
 			obj: &struct {
 				Field int `default:"99999999999999999999999999999999999999999999999999999999999999999"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.IntDefaulter): invalid default value - strconv.ParseInt: parsing \"99999999999999999999999999999999999999999999999999999999999999999\": value out of range, path:'<root>.Field`, field:'Field int `default:\"99999999999999999999999999999999999999999999999999999999999999999\"`'",
+			expectErr: "failed to apply default value : (defaultz.IntDefaulter): invalid default value - " +
+				"strconv.ParseInt: " +
+				"parsing \"99999999999999999999999999999999999999999999999999999999999999999\": value out of range, " +
+				"path:'<root>.Field`, " +
+				"field:'Field int `default:\"99999999999999999999999999999999999999999999999999999999999999999\"`'",
 		},
 		{
 			name: "Slices of non-primitive types",
 			obj: &struct {
 				Field []rand.Rand `default:"foo"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.SliceDefaulter): invalid default value item - unsupported type: rand.Rand, path:'<root>.Field`, field:'Field []rand.Rand `default:\"foo\"`'",
+			expectErr: "failed to apply default value : (defaultz.SliceDefaulter): invalid default value item - " +
+				"unsupported type: rand.Rand, " +
+				"path:'<root>.Field`, " +
+				"field:'Field []rand.Rand `default:\"foo\"`'",
 		},
 		{
-			// even though we support defaulting fields of type time.Duration, we don't support defaulting slices of time.Duration
+			// even though we support defaulting fields of type time.Duration, we don't support
+			// defaulting slices of time.Duration
 			name: "Slices of time.Duration",
 			obj: &struct {
 				Field []time.Duration `default:"1m 2m"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.SliceDefaulter): invalid default value item - strconv.ParseInt: parsing \"1m\": invalid syntax, path:'<root>.Field`, field:'Field []time.Duration `default:\"1m 2m\"`'",
+			expectErr: "failed to apply default value : (defaultz.SliceDefaulter): invalid default value item - " +
+				"strconv.ParseInt: parsing \"1m\": invalid syntax, " +
+				"path:'<root>.Field`, " +
+				"field:'Field []time.Duration `default:\"1m 2m\"`'",
 		},
 		{
 			name: "Maps with keys of non-primitive types",
 			obj: &struct {
 				Field map[rand.Rand]bool `default:"foo:true"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value key - unsupported type: rand.Rand, path:'<root>.Field`, field:'Field map[rand.Rand]bool `default:\"foo:true\"`'",
+			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value key - " +
+				"unsupported type: rand.Rand, " +
+				"path:'<root>.Field`, " +
+				"field:'Field map[rand.Rand]bool `default:\"foo:true\"`'",
 		},
 		{
 			name: "Maps with values of non-primitive types",
 			obj: &struct {
 				Field map[string]rand.Rand `default:"foo:bar"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value item - unsupported type: rand.Rand, path:'<root>.Field`, field:'Field map[string]rand.Rand `default:\"foo:bar\"`'",
+			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value item - " +
+				"unsupported type: rand.Rand, " +
+				"path:'<root>.Field`, " +
+				"field:'Field map[string]rand.Rand `default:\"foo:bar\"`'",
 		},
 		{
 			name: "Slice of structs",
@@ -673,7 +697,10 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 					Foo string `default:"bar"`
 				} `default:"foo"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.SliceDefaulter): invalid default value item - unsupported type: struct { Foo string \"default:\\\"bar\\\"\" }, path:'<root>.Field`, field:'Field []struct { Foo string \"default:\\\"bar\\\"\" } `default:\"foo\"`'",
+			expectErr: "failed to apply default value : (defaultz.SliceDefaulter): invalid default value item - " +
+				"unsupported type: struct { Foo string \"default:\\\"bar\\\"\" }, " +
+				"path:'<root>.Field`, " +
+				"field:'Field []struct { Foo string \"default:\\\"bar\\\"\" } `default:\"foo\"`'",
 		},
 		{
 			name: "Array of structs",
@@ -682,7 +709,10 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 					Foo string `default:"bar"`
 				} `default:"foo"`
 			}{},
-			expectErr: "not supported - no defaulters found for kind 'array', path:'<root>.Field`, field:'Field [5]struct { Foo string \"default:\\\"bar\\\"\" } `default:\"foo\"`'",
+			expectErr: "not supported - " +
+				"no defaulters found for kind 'array', " +
+				"path:'<root>.Field`, " +
+				"field:'Field [5]struct { Foo string \"default:\\\"bar\\\"\" } `default:\"foo\"`'",
 		},
 		{
 			name: "Map of struct keys",
@@ -691,7 +721,10 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 					Foo string `default:"bar"`
 				}]string `default:"foo:bar"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value key - unsupported type: struct { Foo string \"default:\\\"bar\\\"\" }, path:'<root>.Field`, field:'Field map[struct { Foo string \"default:\\\"bar\\\"\" }]string `default:\"foo:bar\"`'",
+			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value key - " +
+				"unsupported type: struct { Foo string \"default:\\\"bar\\\"\" }, " +
+				"path:'<root>.Field`, " +
+				"field:'Field map[struct { Foo string \"default:\\\"bar\\\"\" }]string `default:\"foo:bar\"`'",
 		},
 		{
 			name: "Map of struct values",
@@ -700,7 +733,10 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 					Foo string `default:"bar"`
 				} `default:"foo:bar"`
 			}{},
-			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value item - unsupported type: struct { Foo string \"default:\\\"bar\\\"\" }, path:'<root>.Field`, field:'Field map[string]struct { Foo string \"default:\\\"bar\\\"\" } `default:\"foo:bar\"`'",
+			expectErr: "failed to apply default value : (defaultz.MapDefaulter): invalid default value item - " +
+				"unsupported type: struct { Foo string \"default:\\\"bar\\\"\" }, " +
+				"path:'<root>.Field`, " +
+				"field:'Field map[string]struct { Foo string \"default:\\\"bar\\\"\" } `default:\"foo:bar\"`'",
 		},
 		{
 			name: "Pointer to pointer deep",
@@ -709,22 +745,28 @@ func TestApplyDefaultsWithBasicDefaulters_InvalidCases(t *testing.T) {
 					Field1 **int `default:"123"`
 				}
 			}{},
-			expectErr: "not supported - pointer to pointer is not allowed, path:'<root>.Field.Field1`, field:'Field1 **int `default:\"123\"`'",
+			expectErr: "not supported - " +
+				"pointer to pointer is not allowed, " +
+				"path:'<root>.Field.Field1`, " +
+				"field:'Field1 **int `default:\"123\"`'",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var err error
+
 			assert.NotEmpty(t, tt.expectErr, "Invalid test case: expectErr is empty")
-			err := defaultz.ApplyDefaults(tt.obj)
-			if err == nil {
+			if err = defaultz.ApplyDefaults(tt.obj); err != nil {
+				assert.EqualError(t, err, tt.expectErr, tt.name)
+			} else {
 				t.Logf("expected error, got nil")
-				jsonBytes, err := json.Marshal(tt.obj)
-				assert.NoError(t, err, tt.name)
+				var jsonBytes []byte
+				if jsonBytes, err = json.Marshal(tt.obj); err != nil {
+					t.Fatalf("failed to marshal object to json: %v", err)
+				}
 				t.Logf("got: %s", string(jsonBytes))
 				t.Fail()
-			} else {
-				assert.EqualError(t, err, tt.expectErr, tt.name)
 			}
 		})
 	}
@@ -761,7 +803,7 @@ func TestApplyDefaultsWithNamedStructs(t *testing.T) {
 	if derr != nil {
 		t.Fatalf("unexpected error: %v", derr)
 	}
-	assert.NoError(t, derr)
+	require.NoError(t, derr)
 
 	assert.True(t, obj.Field1)
 	assert.Equal(t, 123, obj.Child.Field2)
@@ -784,7 +826,7 @@ func TestApplyDefaultsCyclicReference(t *testing.T) {
 	obj := &cyclicParent1{}
 
 	derr := defaultz.ApplyDefaults(obj)
-	assert.Error(t, derr)
+	require.Error(t, derr)
 	assert.Equal(t, "type definition must not have cycles", derr.Error())
 }
 
@@ -792,8 +834,13 @@ func TestApplyDefaultsUnexportedFields(t *testing.T) {
 	obj := &testtypes.TestExportedWithUnexportedField{}
 
 	derr := defaultz.ApplyDefaults(obj)
-	assert.Error(t, derr)
-	assert.Equal(t, "cannot set field - cannot set field, path:'github.com/aliok/go-defaultz/testtypes.(TestExportedWithUnexportedField).unexportedField`, field:'unexportedField string `default:\"bar\"`'", derr.Error())
+	require.Error(t, derr)
+	assert.Equal(
+		t,
+		"cannot set field - cannot set field, path:'github.com/aliok/go-defaultz/testtypes."+
+			"(TestExportedWithUnexportedField).unexportedField`, field:'unexportedField string `default:\"bar\"`'",
+		derr.Error(),
+	)
 }
 
 func TestApplyDefaultsIgnoreUnexportedFields(t *testing.T) {
@@ -807,7 +854,7 @@ func TestApplyDefaultsIgnoreUnexportedFields(t *testing.T) {
 	)
 
 	derr := d.ApplyDefaults(obj)
-	assert.NoError(t, derr)
+	require.NoError(t, derr)
 	assert.Equal(t, "foo", obj.ExportedField)
 }
 
@@ -823,7 +870,8 @@ func (c customDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Bool}
 }
 
-func (c customDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (callNext bool, set bool, err *defaultz.Error) {
+//nolint:lll
+func (c customDefaulter) HandleField(value string, _ string, _ reflect.StructField, fieldValue reflect.Value) (bool, bool, *defaultz.Error) {
 	if value == "yay" {
 		fieldValue.SetBool(true)
 		return false, true, nil
@@ -846,6 +894,6 @@ func TestApplyDefaultsCustomDefaulter(t *testing.T) {
 	d.Register(2000, customDefaulter{}) // should run after the core BoolDefaulter
 
 	err := d.ApplyDefaults(obj)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, obj.Field)
 }

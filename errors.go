@@ -52,9 +52,15 @@ func (e *Error) Error() string {
 	typeName := e.Field.Type.String()
 
 	if e.Defaulter == nil {
-		return fmt.Sprintf("%s - %s, path:'%s.%s`, field:'%s %s `%s`'", e.Err.Error(), e.Msg, e.FieldPath, e.Field.Name, e.Field.Name, typeName, e.Field.Tag)
+		return fmt.Sprintf("%s - %s, "+
+			"path:'%s.%s`, "+
+			"field:'%s %s `%s`'",
+			e.Err.Error(), e.Msg, e.FieldPath, e.Field.Name, e.Field.Name, typeName, e.Field.Tag)
 	}
-	return fmt.Sprintf("(%s): %s - %s, path:'%s.%s`, field:'%s %s `%s`'", e.Defaulter.Name(), e.Err.Error(), e.Msg, e.FieldPath, e.Field.Name, e.Field.Name, typeName, e.Field.Tag)
+	return fmt.Sprintf("(%s): %s - %s, "+
+		"path:'%s.%s`, "+
+		"field:'%s %s `%s`'",
+		e.Defaulter.Name(), e.Err.Error(), e.Msg, e.FieldPath, e.Field.Name, e.Field.Name, typeName, e.Field.Tag)
 }
 
 func (e *Error) Unwrap() error { return e.Err }

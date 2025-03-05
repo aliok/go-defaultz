@@ -22,6 +22,7 @@ func (s *StringDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.String}
 }
 
+//nolint:lll
 func (s *StringDefaulter) HandleField(value string, _ string, _ reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	// Handle pointer cases
 	if fieldValue.Kind() == reflect.Ptr {
@@ -48,7 +49,8 @@ func (b *BoolDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Bool}
 }
 
-func (b *BoolDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (callNext bool, set bool, err *Error) {
+//nolint:lll
+func (b *BoolDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	var valueToSet bool
 	switch {
 	case value == "true":
@@ -84,11 +86,8 @@ func (i *IntDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64}
 }
 
+//nolint:dupl,lll	// we have to use SetXXX() methods for different types, thus can't really get rid of this duplication.
 func (i *IntDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
-	// if strings.TrimSpace(value) == "" {
-	// 	return true, false, NewError(i, ErrInvalidDefaultValue, path, field, "empty value")
-	// }
-
 	kind := field.Type.Kind()
 	if kind == reflect.Ptr {
 		kind = field.Type.Elem().Kind()
@@ -96,6 +95,7 @@ func (i *IntDefaulter) HandleField(value string, path string, field reflect.Stru
 
 	var bitSize int
 
+	//nolint:exhaustive			// there's a default case and we don't want to add meaningless cases
 	switch kind {
 	case reflect.Int:
 		bitSize = 0
@@ -140,6 +140,7 @@ func (u *UintDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64}
 }
 
+//nolint:dupl,lll	// we have to use SetXXX() methods for different types, thus can't really get rid of this duplication.
 func (u *UintDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	kind := field.Type.Kind()
 	if kind == reflect.Ptr {
@@ -148,6 +149,7 @@ func (u *UintDefaulter) HandleField(value string, path string, field reflect.Str
 
 	var bitSize int
 
+	//nolint:exhaustive			// there's a default case and we don't want to add meaningless cases
 	switch kind {
 	case reflect.Uint:
 		bitSize = 0
@@ -193,6 +195,7 @@ func (f *FloatDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Float32, reflect.Float64}
 }
 
+//nolint:lll
 func (f *FloatDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	kind := field.Type.Kind()
 	if kind == reflect.Ptr {
@@ -201,6 +204,7 @@ func (f *FloatDefaulter) HandleField(value string, path string, field reflect.St
 
 	var bitSize int
 
+	//nolint:exhaustive			// there's a default case and we don't want to add meaningless cases
 	switch kind {
 	case reflect.Float32:
 		bitSize = 32
@@ -240,6 +244,7 @@ func (s *SliceDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Slice}
 }
 
+//nolint:lll
 func (s *SliceDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	parts := strings.Fields(value) // Split by space
 	sliceType := field.Type
@@ -268,12 +273,15 @@ func (m *MapDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Map}
 }
 
+//nolint:lll
 func (m *MapDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	mapInstance := reflect.MakeMap(field.Type)
 	pairs := strings.Fields(value) // Split by space
 
 	for _, pair := range pairs {
+		//nolint:mnd	// well... pairs have 2 parts
 		kv := strings.SplitN(pair, ":", 2)
+		//nolint:mnd	// well... pairs have 2 parts
 		if len(kv) == 2 {
 			// Convert the key to the appropriate type
 			keyType := field.Type.Key() // The map's key type
@@ -309,6 +317,7 @@ func (d *DurationDefaulter) HandledKinds() []reflect.Kind {
 	return []reflect.Kind{reflect.Int64}
 }
 
+//nolint:lll
 func (d *DurationDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
 	duration, err := time.ParseDuration(value)
 	if err != nil {
@@ -330,6 +339,7 @@ func (d *DurationDefaulter) HandleField(value string, path string, field reflect
 
 // Converts string values to correct type.
 func convertValue(value string, fieldType reflect.Type) (reflect.Value, error) {
+	//nolint:exhaustive			// there's a default case and we don't want to add meaningless cases
 	switch fieldType.Kind() {
 	case reflect.Bool:
 		b, err := strconv.ParseBool(value)
