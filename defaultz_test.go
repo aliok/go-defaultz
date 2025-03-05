@@ -871,7 +871,7 @@ func (c customDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (c customDefaulter) HandleField(value string, _ string, _ reflect.StructField, fieldValue reflect.Value) (bool, bool, *defaultz.Error) {
+func (c customDefaulter) HandleField(value string, _ string, _ reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	if value == "yay" {
 		fieldValue.SetBool(true)
 		return false, true, nil

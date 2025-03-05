@@ -23,7 +23,7 @@ func (s *StringDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (s *StringDefaulter) HandleField(value string, _ string, _ reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (s *StringDefaulter) HandleField(value string, _ string, _ reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	// Handle pointer cases
 	if fieldValue.Kind() == reflect.Ptr {
 		if fieldValue.IsNil() {
@@ -50,7 +50,7 @@ func (b *BoolDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (b *BoolDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (b *BoolDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	var valueToSet bool
 	switch {
 	case value == "true":
@@ -87,7 +87,7 @@ func (i *IntDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:dupl,lll	// we have to use SetXXX() methods for different types, thus can't really get rid of this duplication.
-func (i *IntDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (i *IntDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	kind := field.Type.Kind()
 	if kind == reflect.Ptr {
 		kind = field.Type.Elem().Kind()
@@ -141,7 +141,7 @@ func (u *UintDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:dupl,lll	// we have to use SetXXX() methods for different types, thus can't really get rid of this duplication.
-func (u *UintDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (u *UintDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	kind := field.Type.Kind()
 	if kind == reflect.Ptr {
 		kind = field.Type.Elem().Kind()
@@ -196,7 +196,7 @@ func (f *FloatDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (f *FloatDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (f *FloatDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	kind := field.Type.Kind()
 	if kind == reflect.Ptr {
 		kind = field.Type.Elem().Kind()
@@ -245,7 +245,7 @@ func (s *SliceDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (s *SliceDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (s *SliceDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	parts := strings.Fields(value) // Split by space
 	sliceType := field.Type
 	elemType := sliceType.Elem()
@@ -274,7 +274,7 @@ func (m *MapDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (m *MapDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (m *MapDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	mapInstance := reflect.MakeMap(field.Type)
 	pairs := strings.Fields(value) // Split by space
 
@@ -318,7 +318,7 @@ func (d *DurationDefaulter) HandledKinds() []reflect.Kind {
 }
 
 //nolint:lll
-func (d *DurationDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, *Error) {
+func (d *DurationDefaulter) HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (bool, bool, error) {
 	duration, err := time.ParseDuration(value)
 	if err != nil {
 		return true, false, NewError(d, ErrInvalidDefaultValue, path, field, fmt.Sprintf("invalid duration value: %v", err))

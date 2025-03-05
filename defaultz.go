@@ -49,7 +49,7 @@ type Defaulter interface {
 	//               if no defaulter has set a value and there are errors.
 	//   err (*defaultz.Error): An error if the defaulter fails to set the value.
 	// /nolint:lll
-	HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (callNext bool, set bool, err *Error)
+	HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (callNext bool, set bool, err error)
 }
 
 // DefaulterWithPriority is a wrapper for Defaulter with a priority.
