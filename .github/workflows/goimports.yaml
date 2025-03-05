@@ -1,0 +1,30 @@
+name: Goimports Check
+on:
+  push:
+    branches: [ 'main' ]
+  pull_request:
+    branches: [ 'main' ]
+
+jobs:
+  goimports:
+    name: Run goimports
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
+
+      - name: Run goimports check
+        run: |
+          goimports -l . | tee /tmp/goimports.txt
+          if [ -s /tmp/goimports.txt ]; then
+            echo "Unformatted files detected. Run 'goimports -w .' to fix."
+            exit 1
+          fi
