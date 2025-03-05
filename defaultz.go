@@ -10,8 +10,13 @@ import (
 )
 
 // extractorInstance is the DefaultExtractor instance used by default.
+//
+//nolint:gochecknoglobals	// we need to have an unexported global variable for the default extractor.
 var extractorInstance = NewDefaultzExtractor("default", "", ",")
 
+// instance is the DefaulterRegistry instance used by default.
+//
+//nolint:gochecknoglobals	// we need to have an unexported global variable for the default defaulter registry.
 var instance = NewDefaulterRegistry(
 	WithBasicDefaulters(),
 	WithDefaultExtractor(extractorInstance),

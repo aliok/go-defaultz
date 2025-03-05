@@ -32,6 +32,8 @@ var _ DefaultExtractor = &DefaultzExtractor{}
 //
 // `jsonschema:"title=myfield,default=foo"` will yield "foo", if the tag name is "jsonschema", the prefix is "default="
 // and the separator is ",".
+//
+//nolint:revive		// Extractor would be a too generic name. Here, we're extracting default values.
 type DefaultzExtractor struct {
 
 	// TagName is the tag name to be used for extracting default values.
