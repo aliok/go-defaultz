@@ -24,6 +24,11 @@ type nonCyclicNested struct {
 	}
 }
 
+type multipleOfSameChildType struct {
+	Child1 nonCyclic
+	Child2 nonCyclic
+}
+
 // 🔄 Direct Cycles.
 type directSelfCycle struct {
 	Self *directSelfCycle
@@ -94,6 +99,7 @@ func TestDetectPotentialCycles(t *testing.T) {
 		{"Non-Cyclic Simple", reflect.TypeOf(nonCyclic{}), false},
 		{"Non-Cyclic With Pointers", reflect.TypeOf(nonCyclicPtr{}), false},
 		{"Non-Cyclic With Nested Structs", reflect.TypeOf(nonCyclicNested{}), false},
+		{"Non-Cyclic With Multiple Children of Same Type", reflect.TypeOf(multipleOfSameChildType{}), false},
 
 		// 🔄 Direct Cycles
 		{"Direct Self Cycle", reflect.TypeOf(directSelfCycle{}), true},

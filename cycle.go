@@ -21,11 +21,12 @@ func detectPotentialCycles(t reflect.Type, seen map[reflect.Type]bool) bool {
 		return false
 	}
 
-	// Mark this type as seen
+	// Mark this type as seen for the current recursion path
 	seen[t] = true
+	defer delete(seen, t) // Remove after processing
 
 	// Check each field
-	for i := range t.NumField() {
+	for i := 0; i < t.NumField(); i++ {
 		fieldType := t.Field(i).Type
 		if detectPotentialCycles(fieldType, seen) {
 			return true
