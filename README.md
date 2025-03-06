@@ -157,7 +157,7 @@ func main() {
 import (
     "time"
     
-	"gopkg.in/yaml.v3"
+    "gopkg.in/yaml.v3"
     "github.com/aliok/go-defaultz"
 )
 
