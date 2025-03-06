@@ -22,8 +22,8 @@ var instance = NewDefaulterRegistry(
 	WithDefaultExtractor(extractorInstance),
 )
 
-const PriorityPrimitiveDefaulter = 1000
-const PriorityOtherDefaulter = 2000
+const PrecedencePrimitiveDefaulter = 1000
+const PrecedenceOtherDefaulter = 2000
 
 // ApplyDefaults applies default values to the struct using the basic defaulters.
 func ApplyDefaults(obj interface{}) error {
@@ -57,25 +57,25 @@ type Defaulter interface {
 	HandleField(value string, path string, field reflect.StructField, fieldValue reflect.Value) (callNext bool, set bool, err error)
 }
 
-// DefaulterWithPriority is a wrapper for Defaulter with a priority.
-type DefaulterWithPriority struct {
+// DefaulterWithPrecedence is a wrapper for Defaulter with a precedence.
+type DefaulterWithPrecedence struct {
 	// Defaulter is the defaulter to be used.
 	Defaulter Defaulter
 
-	// Priority is the priority of the defaulter. Lower values have higher priority.
-	Priority int
+	// Precedence is the precedence of the defaulter. Lower values gets called first.
+	Precedence int
 }
 
 // DefaulterRegistry defines an interface for managing defaulters.
 type DefaulterRegistry interface {
-	Register(priority int, defaulter Defaulter) DefaulterRegistry
+	Register(precedence int, defaulter Defaulter) DefaulterRegistry
 	ApplyDefaults(obj interface{}) error
 }
 
 // defaulterRegistry manages registered defaulters for different kinds.
 type defaulterRegistry struct {
 	extractor  DefaultExtractor
-	defaulters map[reflect.Kind][]DefaulterWithPriority
+	defaulters map[reflect.Kind][]DefaulterWithPrecedence
 
 	// IgnoreCannotSet is a flag to ignore fields that cannot be set.
 	ignoreCannotSet bool
@@ -88,13 +88,13 @@ var _ DefaulterRegistry = &defaulterRegistry{}
 func NewDefaulterRegistry(options ...DefaulterRegistryOption) DefaulterRegistry {
 	dr := &defaulterRegistry{
 		extractor:  nil,
-		defaulters: make(map[reflect.Kind][]DefaulterWithPriority),
+		defaulters: make(map[reflect.Kind][]DefaulterWithPrecedence),
 	}
 	for _, option := range options {
 		option(dr)
 	}
 
-	// sort defaulters by priority
+	// sort defaulters by precedence
 	for kind := range dr.defaulters {
 		sortDefaulters(dr.defaulters[kind])
 	}
@@ -102,20 +102,20 @@ func NewDefaulterRegistry(options ...DefaulterRegistryOption) DefaulterRegistry 
 	return dr
 }
 
-func sortDefaulters(dwps []DefaulterWithPriority) {
-	// in-place sort by priority, using go's sort package
-	// we use a stable sort to keep the order of defaulters with the same priority
+func sortDefaulters(dwps []DefaulterWithPrecedence) {
+	// in-place sort by precedence, using go's sort package
+	// we use a stable sort to keep the order of defaulters with the same precedence
 	sort.SliceStable(dwps, func(i, j int) bool {
-		return dwps[i].Priority < dwps[j].Priority
+		return dwps[i].Precedence < dwps[j].Precedence
 	})
 }
 
-// Register adds a defaulter to the registry with its priority.
-// The defaulters are sorted by priority and called in that order.
+// Register adds a defaulter to the registry with its precedence.
+// The defaulters are sorted by precedence and called in that order.
 // If a defaulter denotes that the next defaulter should not be called, the process will stop.
-func (r *defaulterRegistry) Register(priority int, defaulter Defaulter) DefaulterRegistry {
+func (r *defaulterRegistry) Register(precedence int, defaulter Defaulter) DefaulterRegistry {
 	for _, kind := range defaulter.HandledKinds() {
-		r.defaulters[kind] = append(r.defaulters[kind], DefaulterWithPriority{Defaulter: defaulter, Priority: priority})
+		r.defaulters[kind] = append(r.defaulters[kind], DefaulterWithPrecedence{Defaulter: defaulter, Precedence: precedence})
 		// sort
 		sortDefaulters(r.defaulters[kind])
 	}
@@ -125,22 +125,22 @@ func (r *defaulterRegistry) Register(priority int, defaulter Defaulter) Defaulte
 // DefaulterRegistryOption represents functional options for configuring defaulterRegistry.
 type DefaulterRegistryOption func(r *defaulterRegistry)
 
-// - [DurationDefaulter] - priority 2000.
 func WithBasicDefaulters() DefaulterRegistryOption {
 	return func(r *defaulterRegistry) {
-		r.Register(PriorityPrimitiveDefaulter, &BoolDefaulter{})
-		r.Register(PriorityPrimitiveDefaulter, &IntDefaulter{})
-		r.Register(PriorityPrimitiveDefaulter, &UintDefaulter{})
-		r.Register(PriorityPrimitiveDefaulter, &FloatDefaulter{})
-		r.Register(PriorityPrimitiveDefaulter, &SliceDefaulter{})
-		r.Register(PriorityPrimitiveDefaulter, &MapDefaulter{})
-		r.Register(PriorityPrimitiveDefaulter, &StringDefaulter{})
+		// - primitive defaulters - precedence 1000.
+		r.Register(PrecedencePrimitiveDefaulter, &BoolDefaulter{})
+		r.Register(PrecedencePrimitiveDefaulter, &IntDefaulter{})
+		r.Register(PrecedencePrimitiveDefaulter, &UintDefaulter{})
+		r.Register(PrecedencePrimitiveDefaulter, &FloatDefaulter{})
+		r.Register(PrecedencePrimitiveDefaulter, &SliceDefaulter{})
+		r.Register(PrecedencePrimitiveDefaulter, &MapDefaulter{})
+		r.Register(PrecedencePrimitiveDefaulter, &StringDefaulter{})
 
 		// some additional defaulters for non-primitive types
-
 		// time.Duration is an int64 under the hood, so we need to handle it separately.
 		// should run after IntDefaulter as we want non-durations to be handled by IntDefaulter first
-		r.Register(PriorityOtherDefaulter, &DurationDefaulter{})
+		// - [DurationDefaulter] - precedence 2000.
+		r.Register(PrecedenceOtherDefaulter, &DurationDefaulter{})
 	}
 }
 
@@ -261,8 +261,8 @@ func (r *defaulterRegistry) DoApplyDefaults(value reflect.Value, path string) er
 
 			var result *multierror.Error
 			var somethingSet bool
-			for _, defaulterWithPriority := range defaulters {
-				defaulter := defaulterWithPriority.Defaulter
+			for _, defaulterWithPrecedence := range defaulters {
+				defaulter := defaulterWithPrecedence.Defaulter
 
 				var callNext bool
 				var set bool
