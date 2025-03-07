@@ -360,6 +360,61 @@ You can see that:
 
 See [defaultz.Defaulter](https://pkg.go.dev/github.com/aliok/go-defaultz#Defaulter) interface for more information.
 
+## Best practices
+
+Zero values are painful to work with in Go, when it comes to unmarshalling configuration files or user input.
+
+Imagine this struct: 
+
+```go
+type Config struct {
+	Timeout int `default:"10"`
+}
+
+func main() {
+	cfg := Config{}
+	_ = defaultz.ApplyDefaults(&cfg) // Applies defaults
+
+	// ok case
+	fmt.Println(cfg.Timeout) // Output: 10 (default applied)
+
+	cfgWithExplicitZero := Config{Timeout: 0}
+	_ = defaultz.ApplyDefaults(&cfgWithExplicitZero)
+
+	fmt.Println(*cfgWithExplicitZero.Timeout) // Output: 10 (explicit zero is overridden)
+}
+```
+It is not possible to distinguish between the user explicitly setting the timeout to 0 and the user not setting the timeout at all.
+
+This is a general problem within Go [1](https://stackoverflow.com/questions/38486564) [2](https://book.kubebuilder.io/cronjob-tutorial/api-design), not specific to `go-defaultz`.
+
+To overcome this problem, you can use pointers for the fields that you want to distinguish between the zero value and the unset value.
+This is a common pattern in Go, used in `encoding/json` and `flag` packages as well.
+
+But, when to use pointers and when not to use pointers? If the zero value is a valid value for the field, you should use a pointer. 
+Otherwise, you should use the value type directly as you can reject the zero value in the validation step any way. 
+
+```go
+type Config struct {
+    Timeout *int `default:"10"`
+}
+
+func main() {
+    cfg := Config{}
+    _ = defaultz.ApplyDefaults(&cfg) // Applies defaults
+
+    // ok case
+    fmt.Println(*cfg.Timeout) // Output: 10 (default applied)
+
+    cfgWithExplicitZero := Config{Timeout: new(int)}
+    _ = defaultz.ApplyDefaults(&cfgWithExplicitZero)
+
+    fmt.Println(*cfgWithExplicitZero.Timeout) // Output: 0 (explicit zero is preserved)
+}
+```
+
+In a single struct, you should either use pointers or not use pointers for the primitive fields for consistency. 
+
 ## Examples
 
 ### Complex example
